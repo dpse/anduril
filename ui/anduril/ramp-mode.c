@@ -93,6 +93,12 @@ uint8_t steady_state(Event event, uint16_t arg) {
 
     // turn LED on when we first enter the mode
     if ((event == EV_enter_state) || (event == EV_reenter_state)) {
+        #if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+            && defined(USE_DEFAULT_THERMAL_REGULATION)
+        // Remove thermal ceiling as we do our own regulation in this state
+        set_ceiling_level(UINT8_MAX);
+        #endif
+
         #if defined(USE_MOMENTARY_MODE) && defined(USE_STROBE_STATE)
         momentary_mode = 0;  // 0 = ramping, 1 = strobes
         #endif

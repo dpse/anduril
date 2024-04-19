@@ -55,12 +55,33 @@ inline void set_level_aux_rgb_leds(uint8_t level) {
 }
 #endif  // ifdef USE_AUX_RGB_LEDS_WHILE_ON
 
+#if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+	&& defined(USE_DEFAULT_THERMAL_REGULATION)
+inline void set_ceiling_level(uint8_t level) {
+    if (level == 0)
+        level = 1;
+    // Set new ceiling
+    if (level != ceiling_level) {
+        ceiling_level = level;
+        set_level(ceiling_target_level);
+    }
+}
+#endif
 
 void set_level(uint8_t level) {
     #ifdef USE_RAMP_LEVEL_HARD_LIMIT
     if (ramp_level_hard_limit && (level > ramp_level_hard_limit))
         level = ramp_level_hard_limit;
     #endif
+
+    #if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+        && defined(USE_DEFAULT_THERMAL_REGULATION)
+	// Save target level so that it can be restored if the ceiling is raised
+	ceiling_target_level = level;
+	// Limit level to current ceiling
+	if(level > ceiling_level)
+		level = ceiling_level;
+	#endif
 
     #ifdef USE_JUMP_START
     // maybe "jump start" the engine, if it's prone to slow starts

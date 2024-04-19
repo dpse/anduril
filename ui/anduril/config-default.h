@@ -41,6 +41,9 @@
 // (include THERM_CAL_OFFSET in sum as it might already be a non-zero number)
 #define USE_THERM_AUTOCALIBRATE
 
+// Enable thermal regulation in default state if unhandled by current mode
+#undef USE_DEFAULT_THERMAL_REGULATION
+
 // Include a simplified UI for non-enthusiasts?
 #define USE_SIMPLE_UI
 

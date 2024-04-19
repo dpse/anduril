@@ -409,3 +409,24 @@ void low_voltage() {
 
 }
 
+#if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+	&& defined(USE_DEFAULT_THERMAL_REGULATION)
+// If EV_temperature_high is not handled by the current mode
+// we handle it here
+inline void high_temperature(uint16_t howmuch) {
+    int16_t stepdown = ceiling_level - howmuch;
+    if (stepdown < MIN_THERM_STEPDOWN) stepdown = MIN_THERM_STEPDOWN;
+    else if (stepdown > MAX_LEVEL) stepdown = MAX_LEVEL;
+    set_ceiling_level(stepdown);
+}
+
+// If EV_temperature_low is not handled by the current mode
+// we handle it here
+inline void low_temperature(uint16_t howmuch) {
+    int16_t stepup = ceiling_level + howmuch;
+    if (stepup > MAX_LEVEL) stepup = MAX_LEVEL;
+    else if (stepup < MIN_THERM_STEPDOWN) stepup = MIN_THERM_STEPDOWN;
+    set_ceiling_level(stepup);
+}
+#endif
+

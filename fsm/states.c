@@ -84,18 +84,16 @@ uint8_t default_state(Event event, uint16_t arg) {
     }
     #endif
 
-    #if 0
-    #ifdef USE_THERMAL_REGULATION
+    #if defined(USE_THERMAL_REGULATION) && defined(USE_DEFAULT_THERMAL_REGULATION)
     else if (event == EV_temperature_high) {
-        high_temperature();
-        return 0;
+        high_temperature(arg);
+        return EVENT_HANDLED;
     }
 
     else if (event == EV_temperature_low) {
-        low_temperature();
-        return 0;
+        low_temperature(arg);
+        return EVENT_HANDLED;
     }
-    #endif
     #endif
 
     // event not handled
