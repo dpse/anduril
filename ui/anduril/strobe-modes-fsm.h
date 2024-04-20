@@ -37,15 +37,24 @@ typedef enum {
     #ifdef USE_POLICE_COLOR_STROBE_MODE
     police_color_strobe_e,
     #endif
-    #ifdef USE_LIGHTNING_MODE
-    lightning_storm_e,
-    #endif
+	#ifdef USE_BIKE_FLASHER_MODE
+	bike_flasher_e,
+	#endif
     #ifdef USE_CANDLE_MODE
     candle_mode_e,
     #endif
-    #ifdef USE_BIKE_FLASHER_MODE
-    bike_flasher_e,
-    #endif
+	#ifdef USE_LIGHTHOUSE_MODE
+	lighthouse_mode_e,
+	#endif
+	#ifdef USE_LIGHTNING_MODE
+	lightning_storm_e,
+	#endif
+	#ifdef USE_FIREWORK_MODE
+	firework_mode_e,
+	#endif
+	#ifdef USE_BROKEN_FLUORESCENT_MODE
+	broken_fluorescent_mode_e,
+	#endif
     strobe_mode_END
 } strobe_mode_te;
 

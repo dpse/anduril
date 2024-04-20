@@ -69,6 +69,36 @@ inline void lightning_storm_iter();
 #include "anduril/candle-mode.h"
 #endif
 
+#ifdef USE_LIGHTHOUSE_MODE
+#if !defined(DEFAULT_LIGHTHOUSE_LEVEL)
+#define DEFAULT_LIGHTHOUSE_LEVEL  (RAMP_SIZE/3)
+#endif
+#if !defined(DEFAULT_LIGHTHOUSE_DELAY)
+#define DEFAULT_LIGHTHOUSE_DELAY  5
+#endif
+	inline void lighthouse_iter();
+#endif
+
+#ifdef USE_LIGHTNING_MODE
+#if !defined(DEFAULT_LIGHTNING_BUSY_FACTOR)
+#define DEFAULT_LIGHTNING_BUSY_FACTOR 13
+#endif
+	inline void lightning_storm_iter();
+#endif
+
+#ifdef USE_FIREWORK_MODE
+#if !defined(DEFAULT_FIREWORK_LEVEL)
+#define DEFAULT_FIREWORK_LEVEL  (RAMP_SIZE/3)
+#endif
+	inline void firework_iter();
+#endif
+
+#ifdef USE_BROKEN_FLUORESCENT_MODE
+#if !defined(DEFAULT_FLOURESCENT_LEVEL)
+#define DEFAULT_FLOURESCENT_LEVEL  (RAMP_SIZE/3)
+#endif
+	inline void bad_fluorescent_iter();
+#endif
 
 #if defined(USE_POLICE_STROBE_MODE) || defined(USE_SOS_MODE_IN_FF_GROUP)
 #define USE_BORING_STROBE_STATE

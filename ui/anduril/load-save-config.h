@@ -119,7 +119,23 @@ Config cfg = {
     #endif
     #ifdef USE_BIKE_FLASHER_MODE
         .bike_flasher_brightness = DEFAULT_BIKING_LEVEL,
-    #endif
+	#endif
+	#ifdef USE_CANDLE_MODE
+		.candle_brightness = DEFAULT_CANDLE_LEVEL,
+	#endif
+	#ifdef USE_LIGHTHOUSE_MODE
+		.lighthouse_brightness = DEFAULT_LIGHTHOUSE_LEVEL,
+		.lighthouse_delay = DEFAULT_LIGHTHOUSE_DELAY,
+	#endif
+	#ifdef USE_LIGHTNING_MODE
+		.lightning_busy_factor = DEFAULT_LIGHTNING_BUSY_FACTOR,
+	#endif
+	#ifdef USE_FIREWORK_MODE
+		.firework_brightness = DEFAULT_FIREWORK_LEVEL,
+	#endif
+	#ifdef USE_BROKEN_FLUORESCENT_MODE
+		.fluorescent_brightness = DEFAULT_FLOURESCENT_LEVEL,
+	#endif
     #ifdef USE_BEACON_MODE
         // beacon timing
         .beacon_seconds = 2,

@@ -23,7 +23,6 @@ uint8_t candle_mode_state(Event event, uint16_t arg) {
     static const uint8_t candle_wave1_depth = CANDLE_WAVE1_MAXDEPTH * CANDLE_AMPLITUDE / 100;
     static uint8_t candle_wave2_depth       = CANDLE_WAVE2_MAXDEPTH * CANDLE_AMPLITUDE / 100;
     static uint8_t candle_wave3_depth       = CANDLE_WAVE3_MAXDEPTH * CANDLE_AMPLITUDE / 100;
-    static uint8_t candle_mode_brightness = 24;
 
     #ifdef USE_SUNSET_TIMER
     // let the candle "burn out" and shut itself off
@@ -57,13 +56,13 @@ uint8_t candle_mode_state(Event event, uint16_t arg) {
     else if (event == EV_click1_hold) {
         // ramp away from extremes
         if (! arg) {
-            if (candle_mode_brightness >= MAX_CANDLE_LEVEL) { ramp_direction = -1; }
-            else if (candle_mode_brightness <= 1) { ramp_direction = 1; }
+            if (cfg.candle_brightness >= MAX_CANDLE_LEVEL) { ramp_direction = -1; }
+            else if (cfg.candle_brightness <= 1) { ramp_direction = 1; }
         }
         // change brightness, but not too far
-        candle_mode_brightness += ramp_direction;
-        if (candle_mode_brightness < 1) candle_mode_brightness = 1;
-        else if (candle_mode_brightness > MAX_CANDLE_LEVEL) candle_mode_brightness = MAX_CANDLE_LEVEL;
+        cfg.candle_brightness += ramp_direction;
+        if (cfg.candle_brightness < 1) cfg.candle_brightness = 1;
+        else if (cfg.candle_brightness > MAX_CANDLE_LEVEL) cfg.candle_brightness = MAX_CANDLE_LEVEL;
         return EVENT_HANDLED;
     }
     // reverse ramp direction on hold release
@@ -74,8 +73,8 @@ uint8_t candle_mode_state(Event event, uint16_t arg) {
     // click, hold: change brightness (dimmer)
     else if (event == EV_click2_hold) {
         ramp_direction = 1;
-        if (candle_mode_brightness > 1)
-            candle_mode_brightness --;
+        if (cfg.candle_brightness > 1)
+            cfg.candle_brightness --;
         return EVENT_HANDLED;
     }
     // clock tick: animate candle brightness
@@ -93,11 +92,11 @@ uint8_t candle_mode_state(Event event, uint16_t arg) {
         #if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
             && defined(USE_DEFAULT_THERMAL_REGULATION)
         // Adjust brightness to allow full amplitude to stay below ceiling
-        if (candle_mode_brightness + CANDLE_AMPLITUDE > ceiling_level)
+        if (cfg.candle_brightness + CANDLE_AMPLITUDE > ceiling_level)
             brightness += ceiling_level > CANDLE_AMPLITUDE ? ceiling_level - CANDLE_AMPLITUDE : ceiling_level;
         else
         #endif
-        brightness += candle_mode_brightness;
+        brightness += cfg.candle_brightness;
 
         // self-timer dims the light during the final minute
         #ifdef USE_SUNSET_TIMER

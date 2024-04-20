@@ -85,6 +85,22 @@ typedef struct Config {
     #ifdef USE_BIKE_FLASHER_MODE
         uint8_t bike_flasher_brightness;
     #endif
+	#ifdef USE_CANDLE_MODE
+		uint8_t candle_brightness;
+	#endif
+	#ifdef USE_LIGHTHOUSE_MODE
+		uint8_t lighthouse_brightness;
+		uint8_t lighthouse_delay;
+	#endif
+	#ifdef USE_LIGHTNING_MODE
+		uint8_t lightning_busy_factor;
+	#endif
+	#ifdef USE_FIREWORK_MODE
+		uint8_t firework_brightness;
+	#endif
+	#ifdef USE_BROKEN_FLUORESCENT_MODE
+		uint8_t fluorescent_brightness;
+	#endif
     #ifdef USE_BEACON_MODE
         uint8_t beacon_seconds;
     #endif

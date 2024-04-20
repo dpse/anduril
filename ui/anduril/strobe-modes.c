@@ -103,11 +103,46 @@ uint8_t strobe_state(Event event, uint16_t arg) {
         #ifdef USE_BIKE_FLASHER_MODE
         else if (st == bike_flasher_e) {
             cfg.bike_flasher_brightness += ramp_direction;
-            if (cfg.bike_flasher_brightness < 2) cfg.bike_flasher_brightness = 2;
+            if (cfg.bike_flasher_brightness < 1) cfg.bike_flasher_brightness = 1;
             else if (cfg.bike_flasher_brightness > MAX_BIKING_LEVEL) cfg.bike_flasher_brightness = MAX_BIKING_LEVEL;
             set_level(cfg.bike_flasher_brightness);
         }
-        #endif
+		#endif
+
+		#ifdef USE_LIGHTHOUSE_MODE
+		else if (st == lighthouse_mode_e) {
+			cfg.lighthouse_brightness += ramp_direction;
+			if (cfg.lighthouse_brightness < 2) cfg.lighthouse_brightness = 2;
+			else if (cfg.lighthouse_brightness > MAX_LEVEL - 1) cfg.lighthouse_brightness = MAX_LEVEL - 1;
+			set_level(cfg.lighthouse_brightness);
+		}
+		#endif
+
+		#ifdef USE_LIGHTNING_MODE
+		else if (st == lightning_storm_e) {
+			cfg.lightning_busy_factor -= ramp_direction;
+			if(cfg.lightning_busy_factor < 1) cfg.lightning_busy_factor = 1;
+			else if(cfg.lightning_busy_factor > 13) cfg.lightning_busy_factor = 13;
+		}
+		#endif
+
+		#ifdef USE_FIREWORK_MODE
+		else if (st == firework_mode_e) {
+			cfg.firework_brightness += ramp_direction;
+			if (cfg.firework_brightness < 1) cfg.firework_brightness = 1;
+			else if (cfg.firework_brightness > MAX_LEVEL - 1) cfg.firework_brightness = MAX_LEVEL - 1;
+			set_level(cfg.firework_brightness);
+		}
+		#endif
+
+		#ifdef USE_BROKEN_FLUORESCENT_MODE
+		else if (st == broken_fluorescent_mode_e) {
+			cfg.fluorescent_brightness += ramp_direction;
+			if (cfg.fluorescent_brightness < 1) cfg.fluorescent_brightness = 1;
+			else if (cfg.fluorescent_brightness > MAX_LEVEL - 1) cfg.fluorescent_brightness = MAX_LEVEL - 1;
+			set_level(cfg.fluorescent_brightness);
+		}
+		#endif
 
         return EVENT_HANDLED;
     }
@@ -144,11 +179,42 @@ uint8_t strobe_state(Event event, uint16_t arg) {
         // biking mode dimmer
         #ifdef USE_BIKE_FLASHER_MODE
         else if (st == bike_flasher_e) {
-            if (cfg.bike_flasher_brightness > 2)
+            if (cfg.bike_flasher_brightness > 1)
                 cfg.bike_flasher_brightness --;
             set_level(cfg.bike_flasher_brightness);
         }
-        #endif
+		#endif
+
+		#ifdef USE_LIGHTHOUSE_MODE
+		else if (st == lighthouse_mode_e) {
+			if (cfg.lighthouse_brightness > 1)
+				cfg.lighthouse_brightness --;
+			set_level(cfg.lighthouse_brightness);
+		}
+		#endif
+
+		#ifdef USE_LIGHTNING_MODE
+		else if (st == lightning_storm_e) {
+			if (cfg.lightning_busy_factor < 13)
+				cfg.lightning_busy_factor ++;
+		}
+		#endif
+
+		#ifdef USE_FIREWORK_MODE
+		else if (st == firework_mode_e) {
+			if (cfg.firework_brightness > 1)
+				cfg.firework_brightness --;
+			set_level(cfg.firework_brightness);
+		}
+		#endif
+
+		#ifdef USE_BROKEN_FLUORESCENT_MODE
+		else if (st == broken_fluorescent_mode_e) {
+			if (cfg.fluorescent_brightness > 1)
+				cfg.fluorescent_brightness --;
+			set_level(cfg.fluorescent_brightness);
+		}
+		#endif
 
         return EVENT_HANDLED;
     }
@@ -157,6 +223,32 @@ uint8_t strobe_state(Event event, uint16_t arg) {
         save_config();
         return EVENT_HANDLED;
     }
+	#ifdef USE_LIGHTHOUSE_MODE
+	else if (event == EV_click3_hold) {
+		if (st == lighthouse_mode_e) {
+			cfg.lighthouse_delay += ramp_direction;
+			if (cfg.lighthouse_delay < 1) cfg.lighthouse_delay = 1;
+			else if (cfg.lighthouse_delay > UINT8_MAX - 1) cfg.lighthouse_delay = UINT8_MAX - 1;
+			return EVENT_HANDLED;
+		}
+	}
+	else if (event == EV_click4_hold) {
+		if (st == lighthouse_mode_e) {
+			if (cfg.lighthouse_delay > 1)
+				cfg.lighthouse_delay --;
+			return EVENT_HANDLED;
+		}
+	}
+	else if (event == EV_click3_hold_release) {
+		ramp_direction = -ramp_direction;
+		save_config();
+		return EVENT_HANDLED;
+	}
+	else if (event == EV_click4_hold_release) {
+		save_config();
+		return EVENT_HANDLED;
+	}
+	#endif
     #ifdef USE_MOMENTARY_MODE
     // 5 clicks: go to momentary mode (momentary strobe)
     else if (event == EV_5clicks) {
@@ -205,17 +297,35 @@ inline void strobe_state_iter() {
             break;
         #endif
 
-        #ifdef USE_LIGHTNING_MODE
-        case lightning_storm_e:
-            lightning_storm_iter();
-            break;
-        #endif
-
         #ifdef USE_BIKE_FLASHER_MODE
         case bike_flasher_e:
             bike_flasher_iter();
             break;
-        #endif
+		#endif
+
+		#ifdef USE_LIGHTHOUSE_MODE
+		case lighthouse_mode_e:
+			lighthouse_iter();
+			break;
+		#endif
+
+		#ifdef USE_LIGHTNING_MODE
+		case lightning_storm_e:
+			lightning_storm_iter();
+			break;
+		#endif
+
+		#ifdef USE_FIREWORK_MODE
+		case firework_mode_e:
+			firework_iter();
+			break;
+		#endif
+
+		#ifdef USE_BROKEN_FLUORESCENT_MODE
+		case broken_fluorescent_mode_e:
+			bad_fluorescent_iter();
+			break;
+		#endif
     }
 }
 #endif  // ifdef USE_STROBE_STATE
@@ -349,6 +459,90 @@ inline void bike_flasher_iter() {
 #include "anduril/candle-mode.c"
 #endif
 
+#ifdef USE_LIGHTHOUSE_MODE
+// phase is between 0~255, returns MAX_LEVEL at 128 and 1 at both ends
+inline uint8_t lighthouse_intensity(uint8_t phase) {
+	if (phase > 127)
+		phase = 256 - phase;
+	const uint64_t maxOutput = cfg.lighthouse_brightness;
+	// power of 4 (quartic function)
+	return (uint8_t)(maxOutput * phase / 128 * phase / 128 * phase / 128 * phase / 128) + 1;
+}
+
+inline void lighthouse_iter() {
+	static uint8_t lighthouse_phase = 0;
+	uint8_t brightness = lighthouse_intensity(lighthouse_phase++);
+	if (lighthouse_phase == 0) {
+		set_level(0);
+		nice_delay_ms(1000 * cfg.lighthouse_delay);
+	} else {
+		set_level(brightness);
+		nice_delay_ms(10 + cfg.lighthouse_delay);
+	}
+}
+#endif
+
+#ifdef USE_FIREWORK_MODE
+#define FIREWORK_DEFAULT_STAGE_COUNT 64
+#define FIREWORK_DEFAULT_INTERVAL (2500/FIREWORK_DEFAULT_STAGE_COUNT)
+uint8_t firework_stage = 0;
+uint8_t firework_stage_count = FIREWORK_DEFAULT_STAGE_COUNT;
+uint8_t step_interval = FIREWORK_DEFAULT_INTERVAL;
+
+// code is copied and modified from factory-reset.c
+inline void firework_iter() {
+	if (firework_stage == firework_stage_count) {
+		// explode, and reset stage
+		firework_stage = 0;
+		for (uint8_t brightness = cfg.firework_brightness; brightness > 0; brightness--) {
+			set_level(brightness);
+			nice_delay_ms(step_interval/4);
+			set_level((uint16_t)brightness*7/8);
+			nice_delay_ms(step_interval/(1+(pseudo_rand()%5)));
+		}
+		// off for 1 to 5 seconds
+		set_level(0);
+		nice_delay_ms(1000 + (pseudo_rand() % 5) * 1000);
+		// set next stage count (16 to 64 in increment of 8)
+		firework_stage_count = 16 + 8 * (pseudo_rand() % 7);
+		return;
+	}
+	// wind up to explode
+	set_level(firework_stage);
+	nice_delay_ms(step_interval/3);
+	set_level((uint16_t)firework_stage*2/3);
+	nice_delay_ms(step_interval/3);
+	firework_stage++;
+	// we've reached our max brightness for firework mode, let's explode in the next iteration
+	if (firework_stage > cfg.firework_brightness)
+		firework_stage = firework_stage_count;
+}
+#endif
+
+#ifdef USE_BROKEN_FLUORESCENT_MODE
+inline void bad_fluorescent_iter() {
+	static int8_t fluorescent_flicker_random = 1;
+	static int8_t fluorescent_ramp_up_increment = 0;
+	static uint8_t fluorescent_flicker_index = 0;
+	// broken fluorescent
+	// even index: light off, odd index: light on
+	// unit: 10ms or -1 means random number (10~500ms) generated at boot
+	static const int8_t fluorescent_pattern[] = {1,4, -1,2, 5,3, -1,5, 7,27, 1,5, 3,10, -1,20, 3,-1, 2,-1, 10,-1, -1,-1, 1};
+
+	fluorescent_ramp_up_increment++;
+	if ((fluorescent_pattern[fluorescent_flicker_index] == -1 && fluorescent_ramp_up_increment == fluorescent_flicker_random) ||
+		(fluorescent_pattern[fluorescent_flicker_index] == fluorescent_ramp_up_increment)) {
+		fluorescent_flicker_index++;
+		fluorescent_ramp_up_increment = 0;
+		set_level(fluorescent_flicker_index & 1 ? cfg.fluorescent_brightness >> (pseudo_rand()&1): 0);
+	}
+	if (fluorescent_flicker_index >= sizeof(fluorescent_pattern)) {
+		fluorescent_flicker_index = 0;
+		fluorescent_flicker_random = pseudo_rand() % 50 + 1;
+	}
+	nice_delay_ms(10);
+}
+#endif
 
 #ifdef USE_BORING_STROBE_STATE
 #include "anduril/ff-strobe-modes.c"
