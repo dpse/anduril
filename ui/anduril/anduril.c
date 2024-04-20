@@ -413,6 +413,15 @@ void low_voltage() {
     StatePtr state = current_state;
 
     // TODO: turn off aux LED(s) when power is really low
+	#ifdef USE_INDICATOR_LED
+	indicator_led(0);
+	#endif
+	#ifdef USE_BUTTON_LED
+	button_led_set(0);
+	#endif
+	#ifdef USE_AUX_RGB_LEDS
+	rgb_led_set(0);
+	#endif
 
     if (0) {}  // placeholder
 

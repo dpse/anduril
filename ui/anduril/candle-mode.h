@@ -7,6 +7,10 @@
 #define CANDLE_AMPLITUDE 25
 #endif
 
+#if !defined(DEFAULT_CANDLE_LEVEL)
+#define DEFAULT_CANDLE_LEVEL 24
+#endif
+
 uint8_t candle_mode_state(Event event, uint16_t arg);
 // moved to fsm-misc.c because it's also used for tint ramping power correction
 //uint8_t triangle_wave(uint8_t phase);
