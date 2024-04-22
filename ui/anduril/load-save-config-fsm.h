@@ -87,6 +87,7 @@ typedef struct Config {
     #endif
 	#ifdef USE_CANDLE_MODE
 		uint8_t candle_brightness;
+		uint8_t candle_amplitude;
 	#endif
 	#ifdef USE_LIGHTHOUSE_MODE
 		uint8_t lighthouse_brightness;
