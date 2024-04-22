@@ -11,7 +11,9 @@
 
 uint8_t candle_mode_state(Event event, uint16_t arg) {
     static int8_t ramp_direction = 1;
-    #define MAX_CANDLE_LEVEL (MAX_LEVEL-CANDLE_AMPLITUDE-15)
+	#define MIN_CANDLE_AMPLITUDE 10
+	#define MAX_CANDLE_AMPLITUDE 60
+	#define MAX_CANDLE_LEVEL (MAX_LEVEL-MIN_CANDLE_AMPLITUDE-15)
     static uint8_t candle_wave1 = 0;
     static uint8_t candle_wave2 = 0;
     static uint8_t candle_wave3 = 0;
@@ -20,9 +22,9 @@ uint8_t candle_mode_state(Event event, uint16_t arg) {
     #define CANDLE_WAVE1_MAXDEPTH 30
     #define CANDLE_WAVE2_MAXDEPTH 45
     #define CANDLE_WAVE3_MAXDEPTH 25
-    static const uint8_t candle_wave1_depth = CANDLE_WAVE1_MAXDEPTH * CANDLE_AMPLITUDE / 100;
-    static uint8_t candle_wave2_depth       = CANDLE_WAVE2_MAXDEPTH * CANDLE_AMPLITUDE / 100;
-    static uint8_t candle_wave3_depth       = CANDLE_WAVE3_MAXDEPTH * CANDLE_AMPLITUDE / 100;
+    static uint8_t candle_wave1_depth = CANDLE_WAVE1_MAXDEPTH * CANDLE_AMPLITUDE / 100;
+    static uint8_t candle_wave2_depth = CANDLE_WAVE2_MAXDEPTH * CANDLE_AMPLITUDE / 100;
+    static uint8_t candle_wave3_depth = CANDLE_WAVE3_MAXDEPTH * CANDLE_AMPLITUDE / 100;
 
     #ifdef USE_SUNSET_TIMER
     // let the candle "burn out" and shut itself off
@@ -77,6 +79,26 @@ uint8_t candle_mode_state(Event event, uint16_t arg) {
             cfg.candle_brightness --;
         return EVENT_HANDLED;
     }
+	else if (event == EV_click3_hold) {
+		cfg.candle_amplitude += ramp_direction;
+		if (cfg.candle_amplitude < MIN_CANDLE_AMPLITUDE) cfg.candle_amplitude = MIN_CANDLE_AMPLITUDE;
+		else if (cfg.candle_amplitude > MAX_CANDLE_AMPLITUDE) cfg.candle_amplitude = MAX_CANDLE_AMPLITUDE;
+		return EVENT_HANDLED;
+	}
+	else if (event == EV_click4_hold) {
+		if (cfg.candle_amplitude > MIN_CANDLE_AMPLITUDE)
+			cfg.candle_amplitude --;
+		return EVENT_HANDLED;
+	}
+	else if (event == EV_click3_hold_release) {
+		ramp_direction = -ramp_direction;
+		save_config();
+		return EVENT_HANDLED;
+	}
+	else if (event == EV_click4_hold_release) {
+		save_config();
+		return EVENT_HANDLED;
+	}
     // clock tick: animate candle brightness
     else if (event == EV_tick) {
         // un-reverse after 1 second
@@ -122,11 +144,13 @@ uint8_t candle_mode_state(Event event, uint16_t arg) {
         // downward sawtooth on wave2 depth to simulate stabilizing
         if ((candle_wave2_depth > 0) && ((pseudo_rand() & 0b00111111) == 0))
             candle_wave2_depth --;
+		// update
+		candle_wave1_depth = CANDLE_WAVE1_MAXDEPTH * cfg.candle_amplitude / 100;
         // random sawtooth retrigger
         if (pseudo_rand() == 0) {
             // random amplitude
             //candle_wave2_depth = 2 + (pseudo_rand() % ((CANDLE_WAVE2_MAXDEPTH * CANDLE_AMPLITUDE / 100) - 2));
-            candle_wave2_depth = pseudo_rand() % (CANDLE_WAVE2_MAXDEPTH * CANDLE_AMPLITUDE / 100);
+            candle_wave2_depth = pseudo_rand() % (CANDLE_WAVE2_MAXDEPTH * cfg.candle_amplitude / 100);
             //candle_wave3_depth = 5;
             candle_wave2 = 0;
         }
@@ -136,7 +160,7 @@ uint8_t candle_mode_state(Event event, uint16_t arg) {
         if ((pseudo_rand() & 0b01111111) == 0)
             // random amplitude
             //candle_wave3_depth = 2 + (pseudo_rand() % ((CANDLE_WAVE3_MAXDEPTH * CANDLE_AMPLITUDE / 100) - 2));
-            candle_wave3_depth = pseudo_rand() % (CANDLE_WAVE3_MAXDEPTH * CANDLE_AMPLITUDE / 100);
+            candle_wave3_depth = pseudo_rand() % (CANDLE_WAVE3_MAXDEPTH * cfg.candle_amplitude / 100);
         return EVENT_HANDLED;
     }
     return EVENT_NOT_HANDLED;

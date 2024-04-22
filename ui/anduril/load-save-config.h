@@ -122,6 +122,7 @@ Config cfg = {
 	#endif
 	#ifdef USE_CANDLE_MODE
 		.candle_brightness = DEFAULT_CANDLE_LEVEL,
+		.candle_amplitude = CANDLE_AMPLITUDE,
 	#endif
 	#ifdef USE_LIGHTHOUSE_MODE
 		.lighthouse_brightness = DEFAULT_LIGHTHOUSE_LEVEL,
