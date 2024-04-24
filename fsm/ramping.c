@@ -66,6 +66,23 @@ inline void set_ceiling_level(uint8_t level) {
         set_level(ceiling_target_level);
     }
 }
+
+#ifdef USE_SET_LEVEL_GRADUALLY
+inline void set_ceiling_level_gradually(uint8_t level) {
+    if (level == 0)
+        level = 1;
+    // Set new gradual ceiling target to approch per tick
+    ceiling_gradual_level = level;
+}
+
+inline void ceiling_gradual_tick() {
+    // Move ceiling level towards gradual level
+    if (ceiling_level > ceiling_gradual_level)
+        set_ceiling_level(ceiling_level - 1);
+    else if (ceiling_level < ceiling_gradual_level)
+        set_ceiling_level(ceiling_level + 1);
+}
+#endif
 #endif
 
 void set_level(uint8_t level) {
