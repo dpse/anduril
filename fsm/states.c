@@ -94,6 +94,18 @@ uint8_t default_state(Event event, uint16_t arg) {
         low_temperature(arg);
         return EVENT_HANDLED;
     }
+
+    #ifdef USE_SET_LEVEL_GRADUALLY
+    else if (event == EV_temperature_okay) {
+        okay_temperature();
+        return EVENT_HANDLED;
+    }
+
+    else if (event == EV_tick) {
+        default_tick();
+        return EVENT_HANDLED;
+    }
+    #endif
     #endif
 
     // event not handled
