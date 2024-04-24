@@ -323,12 +323,19 @@ inline void lightning_storm_iter() {
 #endif
 inline void bike_flasher_iter() {
     // one iteration of main loop()
-    uint8_t burst = cfg.bike_flasher_brightness << 1;
+    uint8_t brightness = cfg.bike_flasher_brightness;
+    #if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+        && defined(USE_DEFAULT_THERMAL_REGULATION)
+    #define MAX_BIKING_DIFF (MAX_LEVEL - MAX_BIKING_LEVEL)
+    if (brightness + MAX_BIKING_LEVEL > ceiling_level)
+        brightness = ceiling_level - MAX_BIKING_LEVEL;
+    #endif
+    uint8_t burst = brightness << 1;
     if (burst > MAX_LEVEL) burst = MAX_LEVEL;
     for(uint8_t i=0; i<4; i++) {
         set_level(burst);
         nice_delay_ms(5 + BIKE_STROBE_ONTIME);
-        set_level(cfg.bike_flasher_brightness);
+        set_level(brightness);
         nice_delay_ms(65);
     }
     nice_delay_ms(720);  // no return check necessary on final delay
