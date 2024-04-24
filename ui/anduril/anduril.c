@@ -427,7 +427,11 @@ inline void high_temperature(uint16_t howmuch) {
     int16_t stepdown = ceiling_level - howmuch;
     if (stepdown < MIN_THERM_STEPDOWN) stepdown = MIN_THERM_STEPDOWN;
     else if (stepdown > MAX_LEVEL) stepdown = MAX_LEVEL;
+    #ifdef USE_SET_LEVEL_GRADUALLY
+    set_ceiling_level_gradually(stepdown);
+    #else
     set_ceiling_level(stepdown);
+    #endif
 }
 
 // If EV_temperature_low is not handled by the current mode
@@ -436,7 +440,11 @@ inline void low_temperature(uint16_t howmuch) {
     int16_t stepup = ceiling_level + howmuch;
     if (stepup > MAX_LEVEL) stepup = MAX_LEVEL;
     else if (stepup < MIN_THERM_STEPDOWN) stepup = MIN_THERM_STEPDOWN;
+    #ifdef USE_SET_LEVEL_GRADUALLY
+    set_ceiling_level_gradually(stepup);
+    #else
     set_ceiling_level(stepup);
+    #endif
 }
 #endif
 
