@@ -285,6 +285,16 @@ void loop() {
     // "current_state" is volatile, so cache it to reduce code size
     StatePtr state = current_state;
 
+	#if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+        && defined(USE_DEFAULT_THERMAL_REGULATION)
+    static StatePtr last_state = NULL;
+    if(state != last_state) {
+        // Reset ceiling when switching state
+        reset_ceiling_level();
+        last_state = state;
+    }
+    #endif
+
     #ifdef USE_AUX_RGB_LEDS_WHILE_ON
     // display battery charge on RGB button during use
     if (state == steady_state)

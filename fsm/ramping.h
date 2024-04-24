@@ -23,6 +23,7 @@ void set_level_zero();  // implement this in a hwdef
 uint8_t ceiling_level = UINT8_MAX;
 uint8_t ceiling_target_level = 0;
 inline void set_ceiling_level(uint8_t level);
+inline void reset_ceiling_level();
 #ifdef USE_SET_LEVEL_GRADUALLY
 uint8_t ceiling_gradual_level = UINT8_MAX;
 inline void set_ceiling_level_gradually(uint8_t level);

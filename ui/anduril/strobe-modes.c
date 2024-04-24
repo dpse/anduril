@@ -41,6 +41,11 @@ uint8_t strobe_state(Event event, uint16_t arg) {
     else if (event == EV_2clicks) {
         current_strobe_type = cfg.strobe_type = (st + 1) % NUM_STROBES;
         save_config();
+        #if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+            && defined(USE_DEFAULT_THERMAL_REGULATION)
+        // Reset ceiling when switching mode
+        reset_ceiling_level();
+        #endif
         return EVENT_HANDLED;
     }
     #if (NUM_CHANNEL_MODES > 1) && defined(USE_CHANNEL_PER_STROBE)
@@ -50,6 +55,11 @@ uint8_t strobe_state(Event event, uint16_t arg) {
         set_channel_mode((channel_mode + 1) % NUM_CHANNEL_MODES);
         cfg.strobe_channels[st] = channel_mode;
         save_config();
+        #if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+            && defined(USE_DEFAULT_THERMAL_REGULATION)
+        // Reset ceiling when switching mode
+        reset_ceiling_level();
+        #endif
         return EVENT_HANDLED;
     }
     #endif
@@ -57,6 +67,11 @@ uint8_t strobe_state(Event event, uint16_t arg) {
     else if (event == EV_4clicks) {
         current_strobe_type = cfg.strobe_type = (st - 1 + NUM_STROBES) % NUM_STROBES;
         save_config();
+        #if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+            && defined(USE_DEFAULT_THERMAL_REGULATION)
+        // Reset ceiling when switching mode
+        reset_ceiling_level();
+        #endif
         return EVENT_HANDLED;
     }
     // hold: change speed (go faster)
