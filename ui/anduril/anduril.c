@@ -446,5 +446,40 @@ inline void low_temperature(uint16_t howmuch) {
     set_ceiling_level(stepup);
     #endif
 }
+
+// If EV_temperature_okay is not handled by the current mode
+// we handle it here
+#ifdef USE_SET_LEVEL_GRADUALLY
+inline void okay_temperature() {
+    if (ceiling_gradual_level > ceiling_level)
+        set_ceiling_level_gradually(ceiling_level + 1);
+    else if (ceiling_gradual_level < ceiling_level)
+        set_ceiling_level_gradually(ceiling_level - 1);
+}
+
+//
+inline void default_tick(void) {
+    static uint16_t ticks_since_adjust = 0;
+    int16_t diff = ceiling_gradual_level - ceiling_level;
+    if (diff) {
+        ticks_since_adjust++;
+        uint16_t ticks_per_adjust = 256 / GRADUAL_ADJUST_SPEED;
+        if (diff > 0) {
+            // rise at half speed
+            ticks_per_adjust <<= 1;
+        }
+        while (diff) {
+            ticks_per_adjust >>= 1;
+            //diff >>= 1;
+            diff /= 2;  // because shifting produces weird behavior
+        }
+        if (ticks_since_adjust > ticks_per_adjust)
+        {
+            ceiling_gradual_tick();
+            ticks_since_adjust = 0;
+        }
+    }
+}
+#endif
 #endif
 
