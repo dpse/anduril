@@ -326,9 +326,8 @@ inline void bike_flasher_iter() {
     uint8_t brightness = cfg.bike_flasher_brightness;
     #if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
         && defined(USE_DEFAULT_THERMAL_REGULATION)
-    #define MAX_BIKING_DIFF (MAX_LEVEL - MAX_BIKING_LEVEL)
-    if (brightness + MAX_BIKING_LEVEL > ceiling_level)
-        brightness = ceiling_level - MAX_BIKING_LEVEL;
+    if (brightness > (ceiling_level >> 1))
+        brightness = ceiling_level >> 1;
     #endif
     uint8_t burst = brightness << 1;
     if (burst > MAX_LEVEL) burst = MAX_LEVEL;
