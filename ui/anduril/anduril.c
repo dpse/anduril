@@ -478,7 +478,8 @@ inline void default_tick(void) {
             ceiling_gradual_tick();
             ticks_since_adjust = 0;
         }
-    }
+    } else
+        ticks_since_adjust = 0;
 }
 #endif
 #endif
