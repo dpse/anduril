@@ -42,7 +42,9 @@
 #define USE_THERM_AUTOCALIBRATE
 
 // Enable thermal regulation in default state if unhandled by current mode
-#undef USE_DEFAULT_THERMAL_REGULATION
+#if ROM_SIZE > 10000
+#define USE_DEFAULT_THERMAL_REGULATION
+#endif
 
 // Include a simplified UI for non-enthusiasts?
 #define USE_SIMPLE_UI
