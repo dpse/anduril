@@ -68,9 +68,9 @@ inline void set_ceiling_level(uint8_t level) {
 }
 
 inline void reset_ceiling_level() {
-#ifdef USE_SET_LEVEL_GRADUALLY
+    #ifdef USE_SET_LEVEL_GRADUALLY
     set_ceiling_level_gradually(UINT8_MAX);
-#endif
+    #endif
     set_ceiling_level(UINT8_MAX);
 }
 
