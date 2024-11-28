@@ -48,6 +48,9 @@
 #include incfile(HWDEF_H)
 #endif
 
+// Custom overrides
+#include "anduril/config-override.h"
+
 /********* Include headers which need to be before FSM *********/
 
 // enable FSM features needed by basic ramping functions
