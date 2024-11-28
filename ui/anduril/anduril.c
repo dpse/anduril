@@ -121,7 +121,7 @@
 #include "anduril/lockout-mode.h"
 #endif
 
-#ifdef USE_MOMENTARY_MODE
+#if (defined(USE_MOMENTARY_MODE) || defined(USE_TACTICAL_MODE))
 #include "anduril/momentary-mode.h"
 #endif
 
@@ -193,7 +193,7 @@
 #include "anduril/lockout-mode.c"
 #endif
 
-#ifdef USE_MOMENTARY_MODE
+#if (defined(USE_MOMENTARY_MODE) || defined(USE_TACTICAL_MODE))
 #include "anduril/momentary-mode.c"
 #endif
 
@@ -229,8 +229,16 @@ void setup() {
 
         // regular e-switch light, no hard clicky power button
 
-        // blink at power-on to let user know power is connected
-        blink_once();
+        #ifdef USE_WEAK_BATTERY_PROTECTION
+            // try to measure the battery strength
+            // (must be done *before* factory reset,
+            //  because reset tries to use full power,
+            //  and a weak battery can't do that)
+            detect_weak_battery();
+        #else
+            // blink at power-on to let user know power is connected
+            blink_once();
+        #endif
 
         #ifdef USE_FACTORY_RESET
         if (button_is_pressed())
@@ -281,6 +289,16 @@ void loop() {
     // "current_state" is volatile, so cache it to reduce code size
     StatePtr state = current_state;
 
+	#if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+        && defined(USE_DEFAULT_THERMAL_REGULATION)
+    static StatePtr last_state = NULL;
+    if(state != last_state) {
+        // Reset ceiling when switching state
+        reset_ceiling_level();
+        last_state = state;
+    }
+    #endif
+
     #ifdef USE_AUX_RGB_LEDS_WHILE_ON
     // display battery charge on RGB button during use
     if (state == steady_state)
@@ -297,10 +315,12 @@ void loop() {
 
     #ifdef USE_STROBE_STATE
     else if ((state == strobe_state)
-         #ifdef USE_MOMENTARY_MODE
+         #if defined(USE_MOMENTARY_MODE) || defined(USE_TACTICAL_MODE)
          // also handle momentary strobes
-         || ((
-              (state == momentary_state)
+         || ((0
+              #ifdef USE_MOMENTARY_MODE
+              || (state == momentary_state)
+              #endif
               #ifdef USE_TACTICAL_MODE
               || (state == tactical_state)
               #endif
@@ -419,4 +439,69 @@ void low_voltage() {
     }
 
 }
+
+#if !defined(DONT_USE_DEFAULT_STATE) && defined(USE_THERMAL_REGULATION) \
+	&& defined(USE_DEFAULT_THERMAL_REGULATION)
+// If EV_temperature_high is not handled by the current mode
+// we handle it here
+inline void high_temperature(uint16_t howmuch) {
+    int16_t stepdown = ceiling_level - howmuch;
+    if (stepdown < MIN_THERM_STEPDOWN) stepdown = MIN_THERM_STEPDOWN;
+    else if (stepdown > MAX_LEVEL) stepdown = MAX_LEVEL;
+    #ifdef USE_SET_LEVEL_GRADUALLY
+    set_ceiling_level_gradually(stepdown);
+    #else
+    set_ceiling_level(stepdown);
+    #endif
+}
+
+// If EV_temperature_low is not handled by the current mode
+// we handle it here
+inline void low_temperature(uint16_t howmuch) {
+    int16_t stepup = ceiling_level + howmuch;
+    if (stepup > MAX_LEVEL) stepup = MAX_LEVEL;
+    else if (stepup < MIN_THERM_STEPDOWN) stepup = MIN_THERM_STEPDOWN;
+    #ifdef USE_SET_LEVEL_GRADUALLY
+    set_ceiling_level_gradually(stepup);
+    #else
+    set_ceiling_level(stepup);
+    #endif
+}
+
+// If EV_temperature_okay is not handled by the current mode
+// we handle it here
+#ifdef USE_SET_LEVEL_GRADUALLY
+inline void okay_temperature() {
+    if (ceiling_gradual_level > ceiling_level)
+        set_ceiling_level_gradually(ceiling_level + 1);
+    else if (ceiling_gradual_level < ceiling_level)
+        set_ceiling_level_gradually(ceiling_level - 1);
+}
+
+//
+inline void default_tick(void) {
+    static uint16_t ticks_since_adjust = 0;
+    int16_t diff = ceiling_gradual_level - ceiling_level;
+    if (diff) {
+        ticks_since_adjust++;
+        uint16_t ticks_per_adjust = 256 / GRADUAL_ADJUST_SPEED;
+        if (diff > 0) {
+            // rise at half speed
+            ticks_per_adjust <<= 1;
+        }
+        while (diff) {
+            ticks_per_adjust >>= 1;
+            //diff >>= 1;
+            diff /= 2;  // because shifting produces weird behavior
+        }
+        if (ticks_since_adjust > ticks_per_adjust)
+        {
+            ceiling_gradual_tick();
+            ticks_since_adjust = 0;
+        }
+    } else
+        ticks_since_adjust = 0;
+}
+#endif
+#endif
 
