@@ -1,6 +1,6 @@
 # Anduril with Thermal Regulation in All Modes
 
-This is a fork of Anduril that enables thermal regulation in all modes.
+This is a fork of Anduril that enables thermal regulation in all modes (blinkies, etc.).
 
 # Anduril Flashlight Firmware + FSM Flashlight UI Toolkit
 
