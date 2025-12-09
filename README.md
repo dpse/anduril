@@ -1,3 +1,7 @@
+# Anduril with Thermal Regulation in All Modes
+
+This is a fork of Anduril that enables thermal regulation in all modes.
+
 # Anduril Flashlight Firmware + FSM Flashlight UI Toolkit
 
 Anduril is a user interface for flashlights.  It is written with FSM, a UI
