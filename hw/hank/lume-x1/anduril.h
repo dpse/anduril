@@ -1,25 +1,21 @@
 // Hank Emisar/Noctigon Lume-X1 config options for Anduril
-// Copyright (C) 2018-2024 Selene ToyKeeper, Loneoceans
+// Copyright (C) 2017-2026 Selene ToyKeeper
+//               2022-2024 Loneoceans
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
 // For flashlights using the Loneoceans Lume-X1-40W boost driver (AVR32DD20)
 // - Same firmware for 6V, 9V, or 12V configs
-// same as loneoceans lume-x1-avr32dd20 but with Hank-specific defaults
 
-#define HWDEF_H hank/lume-x1/hwdef.h
+#define HWDEF_H  hank/lume-x1/hwdef.h
 #include "hank/anduril.h"
-
 
 
 //***************************************
 //**    RAMP TABLE AND OPERATIONS      **
 //***************************************
 
-#define RAMP_SIZE 150   // Change to 160 as well as table and values below if desired
-
-// PWM1: DAC Data
-// UDR x^4 curves specifically for Lume-X1 (AVR32DD20)
+#define RAMP_SIZE 150
 
 // levels 1 to 5:
 //   ./bin/level_calc.py 5.2 1 5 7135 100 0.01 0.1 --pwm 2500

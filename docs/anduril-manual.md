@@ -438,13 +438,16 @@ In more detail, this is what each blinky / utility mode does:
 Blinks out the battery voltage per cell.  Full is 4.20V, empty is
 about 3.00V.  The light blinks the whole-number digit first, pauses,
 then blinks out the "tenths" digit, pauses, then blinks out the "hundredths"
-digit, in 0.02V steps.  So for 4.16V, it would be "4 blinks, 1 blink,
+digit, in 0.01V steps.  So for 4.16V, it would be "4 blinks, 1 blink,
 6 blinks".  Then if it is in Advanced UI, it pauses for a bit longer and
 repeats.  In Simple UI, it turns off after one readout.
 
 A "zero" digit is represented by a very quick blink.
 
 The battery check format has changed a few times:
+
+  - For Anduril 2 from 2026-09 or later, the battery voltage resolution is
+    0.01V steps.
 
   - For Anduril 2 from 2024-04 or later, the battery voltage resolution is
     0.02V steps (the last digit can be 0, 2, 4, 6, or 8).
@@ -459,6 +462,15 @@ The battery check format has changed a few times:
   - On old attiny85 lights with only 8 KiB of ROM, battery voltage resolution
     is 0.1V, even on newer versions of Anduril.
 
+Some lights have a "Batt Color" mode too.  Press `1H` in Batt Check mode to
+toggle this.  Instead of blinking, it shows battery fullness by color.  It
+updates the color rapidly, for real-time info.
+
+Some lights have a "Powerbank Host" mode.  Press `2H` in Batt Check mode to
+toggle between powerbank host or guest.  This controls whether the flashlight
+gets charged when using a USB C-to-C cable to another device, or whether the
+other device gets charged.
+
 On lights with more than one set of LEDs, pressing `3C` during batt
 check mode can select which set of LEDs (which channel mode) it uses
 to blink out numbers.
@@ -467,21 +479,20 @@ The voltage config menu has these settings:
 
   1. Voltage correction factor.  This adjusts the battery
      measurement sensor, allowing the user to add or subtract up to
-     0.30V in 0.05V steps.  Click N times to enter a value:
+     0.20V in 0.01V steps.  Click N times to enter a value:
 
-     `1C`: -0.30V  
-     `2C`: -0.25V  
-     `3C`: -0.20V  
-     `4C`: -0.15V  
-     `5C`: -0.10V  
-     `6C`: -0.05V  
-     `7C`: default, 0V  
-     `8C`: +0.05V  
-     `9C`: +0.10V  
-     `10C`: +0.15V  
-     `11C`: +0.20V  
-     `12C`: +0.25V  
-     `13C`: +0.30V
+     ...  
+     `17`: -0.03V  
+     `18`: -0.02V  
+     `19`: -0.01V  
+     `20`: +0.00V (default)  
+     `21`: +0.01V  
+     `22`: +0.02V  
+     `23`: +0.03V  
+     ...
+
+     It is recommended to use `1H` to add 10, then use `1C` for 1.
+     For example, if you want +0.03V, do `1H` twice then `1C` three times.
 
   2. Post-off voltage display timeout.  (only on lights with RGB aux)
      This setting determines how many seconds the RGB aux LEDs
@@ -492,14 +503,14 @@ The voltage config menu has these settings:
   3. Aux low ramp level.  Controls behavior of aux button LEDs while the main
      LEDs are on.  Below this ramp level, button LEDs will not be lit up while
      the main LEDs are on.  At or above this level, button LEDs light up at the
-     "low" brightness level.  Setting it to 0 keeps the button LEDs off
-     completely while the main LEDs are on.  
-     Also controls brightness of post-off voltage display.
+     "low" brightness level.  Setting it to 0 is a shortcut for entering "255",
+     which is higher than the top of the ramp.  
+     Also controls brightness of post-off voltage display (POVD).
 
   4. Aux high ramp level.  At or above this ramp level, button LEDs light up at
-     the "high" brightness level.  Setting it to 0 disables button's high aux
-     mode while the main LEDs are on.  
-     Also controls brightness of post-off voltage display.
+     the "high" brightness level.  Setting it to 0 is a shortcut for "255",
+     which is higher than the top of the ramp.  
+     Also controls brightness of post-off voltage display (POVD).
 
   5. Aux while on.  Determines which aux LEDs will be lit up while the main
      LEDs are on, like in ramping mode:  
@@ -541,6 +552,10 @@ seconds between pulses are configurable:
     speed.  
     For example, to do a 10-second alpine beacon, hold the button
     for 10 seconds.
+
+If Smooth Steps is enabled, the beacon ramps up quickly, then fades
+gradually.  This simulates the behavior of an analog incandescent bulb,
+which needs time to heat up and cool off.
 
 ### SOS mode:
 
@@ -912,6 +927,12 @@ The aux LEDs on most lights only turn on when the light is asleep.
 When a light has a single-color aux LED and no RGB, it fast-blinks the
 aux LED in "off" modes when voltage is low.
 
+For lights with an aux RGB control chip, the brightness of the "low" and
+"high" modes can be configured.  To do this, go to Off mode, set the pattern
+to "low" or "high", then use `8H` to change the brightness.  This only works
+on specific models from 2026 or later which have a dedicated chip to manage
+the RGB aux LEDs.
+
 The aux LED behavior can be configured further by entering the Voltage Config
 Menu inside of Batt Check mode.
 
@@ -981,6 +1002,9 @@ POVD mode.  The "aux low ramp level" and "aux high ramp level" mostly work
 the same, except the brightness ramps between the two.  The same brightness
 ramp applies in that range during regular "on" modes, if enabled.
 
+On some models, POVD brightness can be adjusted further.  To do this, enter
+Batt Color mode then use `8H`.  This sets the peak brightness for POVD.
+
 
 Misc Config Menu
 ----------------
@@ -1024,6 +1048,7 @@ times unless they're overridden by the mode the light is in:
 
   - `3C`: Next channel mode
   - `3H`: Adjust current channel mode (ramp tint, for example)
+  - `8H`: Adjust aux RGB brightness (aux channels only, on specific hardware)
   - `9H`: Channel mode config menu
 
 Details depend on the exact type of light used.  For example, if a light
@@ -1076,6 +1101,12 @@ Custom channel modes may work differently.
 On lights with channel modes, manual memory (`Ramp -> 10C`) saves the
 current brightness *and* channel mode.
 
+For lights with an aux RGB control chip, the brightness of the aux RGB modes
+can be configured.  To do this, go a mode like Ramp or Strobe, enable an aux
+channel mode, then use `8H` to change the brightness.  This only works on
+specific models from 2026 or later which have a dedicated chip to manage
+the RGB aux LEDs.
+
 
 FAQ
 ---
@@ -1110,6 +1141,9 @@ This is a table of all button mappings in Anduril, in one place:
 | Off            | Full   | `6C`    | Tactical mode
 | Off            | Full   | `7C`    | Aux LEDs: Next pattern
 | Off            | Full   | `7H`    | Aux LEDs: Next color
+| Off            | Full   | `8H`    | Aux LEDs: Next brightness (some models)
+|                |        |         | (set pattern to "low" or "high" first,
+|                |        |         |  to adjust brightness of that pattern)
 | Off            | Full   | `9H`    | Misc Config menu (varies per light):
 |                |        |         | ?1: tint ramp style
 |                |        |         | ?2: jump start level
@@ -1157,6 +1191,8 @@ This is a table of all button mappings in Anduril, in one place:
 | :---           | :--    | ------: | :-----
 | Any            | Any    | `3C`    | Next channel mode (i.e. next color mode)
 | Any            | Any    | `3H`    | Tint ramp (if this mode can)
+| Any            | Full   | `8H`    | Change aux RGB brightness (if hardware can)
+|                |        |         | (for the "On" modes like ramp and strobe)
 | Any            | Full   | `9H`    | Channel mode enable/disable menu:
 |                |        |         | N: click (or not) to enable (disable) mode N
 
@@ -1197,34 +1233,37 @@ This is a table of all button mappings in Anduril, in one place:
 
 | Mode           | UI     | Button  | Action
 | :---           | :--    | ------: | :-----
-| Batt check     | Any    | `1C`    | Off
-| Batt check     | Full   | `2C`    | Next blinky mode (Temp check, Beacon, SOS)
-| Batt check     | Full   | `3C`    | Next channel mode (for number blinks only)
-| Batt check     | Full   | `7H`    | Voltage config menu
+| Batt Check     | Any    | `1C`    | Off
+| Batt Check     | Any    | `1H`    | Toggle Batt Color mode (on some models)
+| Batt Check     | Any    | `2H`    | Toggle Powerbank Host mode (on some models)
+| Batt Check     | Full   | `2C`    | Next blinky mode (Temp check, Beacon, SOS)
+| Batt Check     | Full   | `3C`    | Next channel mode (for number blinks only)
+| Batt Check     | Full   | `7H`    | Voltage config menu
 |                |        |         | 1: voltage correction factor
-|                |        |         | ... 5: -0.10V
-|                |        |         | ... 6: -0.05V
-|                |        |         | ... 7: no correction
-|                |        |         | ... 8: +0.05V
-|                |        |         | ... 9: +0.10V
+|                |        |         | ... 18: -0.02V
+|                |        |         | ... 19: -0.01V
+|                |        |         | ... 20: no correction
+|                |        |         | ... 21: +0.01V
+|                |        |         | ... 22: +0.02V
 |                |        |         | 2: post-off voltage display seconds
 |                |        |         | 3: aux low ramp level
-|                |        |         | ... 0: disabled
-|                |        |         | ... 1+: light up at this ramp level
+|                |        |         | ... 0: shortcut for 255
+|                |        |         | ... 1+: light up (low) at this ramp level
 |                |        |         | 4: aux high ramp level
-|                |        |         | ... 0: disabled
-|                |        |         | ... 1+: brighter at this ramp level
+|                |        |         | ... 0: shortcut for 255
+|                |        |         | ... 1+: high at/above this ramp level
 |                |        |         | 5: aux while on
 |                |        |         | ... 0: disabled
 |                |        |         | ... 1: single-color aux only
 |                |        |         | ... 2: RGB aux only
 |                |        |         | ... 3: both
+| Batt Color     | Full   | `8H`    | Change POVD brightness (if hardware can)
 
 | Mode           | UI     | Button  | Action
 | :---           | :--    | ------: | :-----
-| Temp check     | Full   | `1C`    | Off
-| Temp check     | Full   | `2C`    | Next blinky mode (Beacon, SOS, Batt check)
-| Temp check     | Full   | `7H`    | Thermal config menu
+| Temp Check     | Full   | `1C`    | Off
+| Temp Check     | Full   | `2C`    | Next blinky mode (Beacon, SOS, Batt check)
+| Temp Check     | Full   | `7H`    | Thermal config menu
 |                |        |         | 1: set current temperature
 |                |        |         | 2: set temperature limit
 

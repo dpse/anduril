@@ -6,18 +6,57 @@
 #include "anduril/battcheck-mode.h"
 
 uint8_t battcheck_state(Event event, uint16_t arg) {
-    ////////// Every action below here is blocked in the simple UI //////////
-    #ifdef USE_SIMPLE_UI
-    if (cfg.simple_ui_active) {
-        return EVENT_NOT_HANDLED;
-    }
-    #endif
+    #ifdef USE_SMOOTH_POVD
+    static uint8_t lvp_counter = 0;
+    #endif  // #ifdef USE_SMOOTH_POVD
 
     // 1 click: off
     if (event == EV_1click) {
         set_state(off_state, 0);
         return EVENT_HANDLED;
     }
+
+    #ifdef USE_SMOOTH_POVD
+    // 1H: toggle Batt Color mode
+    else if (event == EV_click1_hold) {
+        if (! arg) {
+            batt_color_mode = (! batt_color_mode);
+            blink_once();
+        }
+        return EVENT_HANDLED;
+    }
+    #endif  // #ifdef USE_SMOOTH_POVD
+
+    #ifdef USE_POWERBANK_HOST_MODE
+    // 2H: toggle Powerbank Host mode
+    else if (event == EV_click2_hold) {
+        if (! arg) {
+            if (powerbank_is_in_host_mode)
+                set_powerbank_guest_mode();
+            else
+                set_powerbank_host_mode();
+            blink_once();
+        }
+        return EVENT_HANDLED;
+    }
+    // turn off powerbank host mode when exiting Batt Check
+    else if (event == EV_leave_state) {
+        set_powerbank_guest_mode();
+        return EVENT_HANDLED;
+    }
+    #endif  // ifdef USE_POWERBANK_HOST_MODE
+
+    #ifdef USE_SIMPLE_UI
+    else if (cfg.simple_ui_active) {
+        // any other button event is completed: exit
+        //if ((B_CLICK|B_TIMEOUT) == (event & (B_CLICK|B_TIMEOUT))) {
+        //    set_state(off_state, 0);
+        //}
+        return EVENT_NOT_HANDLED;
+    }
+    #endif
+
+    ////////// Every action below here is blocked in the simple UI //////////
 
     // 2 clicks: next blinky mode
     else if (event == EV_2clicks) {
@@ -48,7 +87,63 @@ uint8_t battcheck_state(Event event, uint16_t arg) {
     }
     #endif
 
+    #ifdef USE_AW2016
+    // 8H: change Batt Color and POVD brightness
+    else if (batt_color_mode && (event == EV_click8_hold)) {
+        if (0 == (arg & 0b00111111)) {  // every second or so
+            cfg.aw2016_level_povd = aw2016_next_ramp_row(cfg.aw2016_level_povd, 1);
+            aw2016_set_ramp_current(cfg.aw2016_level_povd);
+            save_config();
+        }
+        return EVENT_HANDLED;
+    }
+    #endif  // #ifdef USE_AW2016
+
+    #ifdef USE_SMOOTH_POVD
+    // FIXME? use a better symbol for this, like USE_BATT_COLOR_MODE or similar
+    else if (event == EV_voltage_low) {
+        // while charging, chargers can sometimes drop voltage really low for a moment,
+        // so don't react unless it stays low for a while
+        lvp_counter ++;
+        if (lvp_counter > 16) return EVENT_NOT_HANDLED;  // allow light to turn off
+        else return EVENT_HANDLED;  // ignore until we're sure
+    }
+    else if (! voltage_is_low) {
+        lvp_counter = 0;
+    }
+    #endif  // #ifdef USE_SMOOTH_POVD
+
     return EVENT_NOT_HANDLED;
+}
+
+void battcheck_iter() {
+    #ifdef USE_SMOOTH_POVD
+    if (batt_color_mode) {
+        // force ADC into voltage mode, and update 'voltage' var
+        if (adc_channel) {  // force voltage, not temperature
+            adc_voltage_mode();
+        }
+        else {
+            // update cooked voltage measurement
+            v16_force_update();
+            // draw this frame
+            draw_smooth_povd(RAMP_SIZE);
+            // wait until next frame
+            nice_delay_ms(16);
+        }
+        return;
+    }
+    #endif  // #ifdef USE_SMOOTH_POVD
+
+    nice_delay_ms(1000);  // wait a moment for a more accurate reading
+    battcheck();
+    #ifdef USE_SIMPLE_UI
+    // in simple mode, turn off after one readout
+    // FIXME: can eat the next button press
+    //        (state changes in loop() act weird)
+    if (cfg.simple_ui_active) set_state_deferred(off_state, 0);
+    else nice_delay_ms(1000);
+    #endif
 }
 
 #if defined(USE_VOLTAGE_CORRECTION) || defined(USE_POST_OFF_VOLTAGE) || defined(USE_AUX_THRESHOLD_CONFIG)
