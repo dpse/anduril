@@ -122,7 +122,7 @@ inline void ceiling_gradual_tick() {
 
 void set_level(uint8_t level) {
     #ifdef USE_RAMP_LEVEL_HARD_LIMIT
-    if (ramp_level_hard_limit && (level > ramp_level_hard_limit))
+    if (level > ramp_level_hard_limit)
         level = ramp_level_hard_limit;
     #endif
 

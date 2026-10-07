@@ -1,5 +1,5 @@
 // FW3X Lume1 helper functions
-// Copyright (C) 202-2026 Selene ToyKeeper
+// Copyright (C) 2020-2026 Selene ToyKeeper
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 

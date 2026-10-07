@@ -232,6 +232,10 @@
 #include "anduril/smooth-povd.c"
 #endif
 
+#ifdef USE_AW2016
+#include "lib/aw2016/aw2016.c"
+#endif
+
 
 // runs one time at boot, when power is connected
 void setup() {
@@ -366,15 +370,7 @@ void loop() {
 
     #ifdef USE_BATTCHECK
     else if (state == battcheck_state) {
-        nice_delay_ms(1000);  // wait a moment for a more accurate reading
-        battcheck();
-        #ifdef USE_SIMPLE_UI
-        // in simple mode, turn off after one readout
-        // FIXME: can eat the next button press
-        //        (state changes in loop() act weird)
-        if (cfg.simple_ui_active) set_state_deferred(off_state, 0);
-        else nice_delay_ms(1000);
-        #endif
+        battcheck_iter();
     }
     #endif
 

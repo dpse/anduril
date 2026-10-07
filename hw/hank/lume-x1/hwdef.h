@@ -1,11 +1,8 @@
+// hardware definitions for hank-lume-x1
 // Copyright (C) 2017-2026 Selene ToyKeeper
 //               2021-2024 loneoceans
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
-
-//**************************************************
-//**  HARDWARE DEFINITIONS FOR LUME-X1-AVR32DD20  **
-//**************************************************
 
 /*  Loneoceans Lume-X1 with AVR32DD20
 
@@ -93,7 +90,7 @@ enum channel_modes_e {
 
 // Ultra Dynamic Range (UDR)
 /*
-    UDR makes use of the concept of multiple power paths. 3 are used in this
+    UDR makes use of the concept of multiple power paths.  3 are used in this
     design to achieve extremely low moonlight levels. This is combined with
     dynamic Vref for smoother brightness level transitions that would
     normally be limited by the 10-bit DAC resolution.
@@ -104,15 +101,19 @@ enum channel_modes_e {
     current sense resolution especially at the low end. Using UDR, Lume1/X1
     is capable of ultra-low firefly / moonlight levels with a dynamic range
     on the order of >10-50 million : 1.
+
+    This is overkill, so it is recommended to start the ramp at around
+    level 100 of 2500 on the firefly channel.  Below that is basically
+    not visible to a human eye.  Mostly, it's useful for preventing preflash.
 */
 
 // For UDR Path 1 (firefly mode) - PA7
-#define LED_PATH1_PIN PIN7_bm
-#define LED_PATH1_PORT PORTA_OUT
+#define LED_PATH1_PIN   PIN7_bm
+#define LED_PATH1_PORT  PORTA_OUT
 
 // For UDR Path 2 (low mode) - PA6
-#define LED_PATH2_PIN PIN6_bm
-#define LED_PATH2_PORT PORTA_OUT
+#define LED_PATH2_PIN   PIN6_bm
+#define LED_PATH2_PORT  PORTA_OUT
 
 // For UDR Path 3 (high mode) - PA5
 #define LED_PATH3_PIN   PIN5_bm
@@ -149,7 +150,7 @@ enum channel_modes_e {
 #define AUX1_LED_PORT  PORTA
 
 
-// Define e-switch Pin and ISR
+// e-switch
 #ifndef SWITCH_PIN   // PD4
 #define SWITCH_PIN     PIN4_bp
 #define SWITCH_PORT    VPORTD.IN
@@ -158,10 +159,11 @@ enum channel_modes_e {
 #define SWITCH_INTFLG  VPORTD.INTFLAGS
 #endif
 
-// average drop across diode on this hardware
-#ifndef VOLTAGE_FUDGE_FACTOR
-#define VOLTAGE_FUDGE_FACTOR 1  // PFET for RRP, essentially 0 v-drop, but experimentally add 0.05V for better UX
-#endif
+// calibrate the battery voltage sensor here
+#undef VOLTAGE_SLOPE
+#undef VOLTAGE_OFFSET
+#define VOLTAGE_SLOPE   1014  // default = 1024, higher = higher voltage
+#define VOLTAGE_OFFSET  0     // 0 cV
 
 //***************************************
 //**          HARDWARE INIT            **
@@ -177,11 +179,11 @@ inline void hwdef_setup() {
     VPORTA.DIR = PIN1_bm | PIN2_bm | PIN3_bm |  // aux RGB
                  PIN4_bm |  // aux button LED
                  PIN5_bm | PIN6_bm | PIN7_bm;  // high/low/moon path
-    VPORTC.DIR = PIN1_bm;
-    VPORTD.DIR = PIN6_bm;
+    VPORTC.DIR = PIN1_bm;  // boost enable
+    VPORTD.DIR = PIN6_bm;  // DAC out
 
     // now set pullups on input pins, and unused pins (reduce power)
-    PORTA.PIN0CTRL = PORT_PULLUPEN_bm;  // FET
+    PORTA.PIN0CTRL = PORT_PULLUPEN_bm;  // FET (unused)
     //PORTA.PIN1CTRL = PORT_PULLUPEN_bm;  // AUX R
     //PORTA.PIN2CTRL = PORT_PULLUPEN_bm;  // AUX G
     //PORTA.PIN3CTRL = PORT_PULLUPEN_bm;  // AUX B
@@ -190,27 +192,27 @@ inline void hwdef_setup() {
     //PORTA.PIN6CTRL = PORT_PULLUPEN_bm;  // PATH2
     //PORTA.PIN7CTRL = PORT_PULLUPEN_bm;  // PATH1
 
-    //PORTC.PIN1CTRL = PORT_PULLUPEN_bm;  // ENABLE
-    PORTC.PIN2CTRL = PORT_PULLUPEN_bm;  // MIC ENABLE
-    PORTC.PIN3CTRL = PORT_PULLUPEN_bm;  // NEO
+    //PORTC.PIN1CTRL = PORT_PULLUPEN_bm;  // boost enable
+    PORTC.PIN2CTRL = PORT_PULLUPEN_bm;  // none
+    PORTC.PIN3CTRL = PORT_PULLUPEN_bm;  // none
 
     //PORTD.PIN4CTRL = PORT_PULLUPEN_bm;  // ESW (100kR PULLUP)
-    PORTD.PIN5CTRL = PORT_PULLUPEN_bm;  // MIC OUT
+    PORTD.PIN5CTRL = PORT_PULLUPEN_bm;  // none
     //PORTD.PIN6CTRL = PORT_PULLUPEN_bm;  // DAC OUT
     PORTD.PIN7CTRL = PORT_PULLUPEN_bm;  // PWR BNK ENABLE
 
     // clear some pins we don't need for now or want to initialize as low
     PORTC_OUT &= ~(1 << PIN1_bp);   // ENABLE
-    PORTC_OUT &= ~(1 << PIN2_bp);   // MIC ENABLE
+    PORTC_OUT &= ~(1 << PIN2_bp);   // none
     PORTD_OUT &= ~(1 << PIN7_bp);   // PWR BNK ENABLE
 
-    //E-Switch (now uses external pullup)
+    // e-switch (uses external pullup)
     PORTD.DIRCLR = PIN4_bm; // set ESW as input pin
     PORTD.PIN4CTRL = PORT_ISC_BOTHEDGES_gc;
 
     // set up the DAC (used for the switching regulator)
     // https://www.microchip.com/en-us/product/avr32dd20
-    // DAC ranges from 0V to (255 * Vref) / 256
+    // DAC ranges from 0V to (1023 * Vref) / 1024
     
     // Datasheet 34.3.1-2/2: input for DAC must be disabled
     PORTD.PIN6CTRL = PORT_ISC_INPUT_DISABLE_gc;
@@ -254,3 +256,4 @@ FUSES = {
 };
 
 #define LAYOUT_DEFINED
+
